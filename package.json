@@ -6,6 +6,7 @@
   "keywords": [],
   "dependencies": {
     "async": "^2.1.4",
+    "cheerio": "^0.22.0",
     "ejs": "2.3.4",
     "grunt": "1.0.1",
     "grunt-contrib-clean": "1.0.0",

@@ -46,6 +46,7 @@ module.exports.routes = {
   *                                                                          *
   ***************************************************************************/
 
-  'get /api/random-service': 'ServiceController.getService',
+  'get /api/service/:service': 'ServiceController.getService',
+  'get /service': 'ServiceController.index',
 
 };
