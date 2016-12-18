@@ -1,0 +1,106 @@
+<!-- Default home page -->
+<link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,600' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" type='text/css' />
+<script type="text/javascript">
+  var service = '';
+  var mymap = null;
+  var busGroup = null;
+  var stopGroup = null;
+  var route = null;
+  var refresh = null;
+
+  function drawBuses(buses){
+    var b = [];
+    _.each(buses, function(bus) {
+      var marker = L.marker(new L.LatLng(bus.latlng[0],bus.latlng[1]), {opacity: 1.0});
+      b.push(marker);
+    });
+    console.log("Drawing "+b.length+"buses.")
+    if (b.length>0) {
+      if (busGroup) {
+        busGroup.clearLayers();
+      }
+      busGroup = new L.featureGroup(b);
+      busGroup.addTo(mymap);
+    }
+  }
+
+  function drawRoute(data) {
+    var pointList = [];
+
+    var points = data.shapes;
+    _.each(points, function(point) {
+      pointList.push( new L.LatLng(point.latShape,point.lonShape));
+    });
+
+    if (route) {
+      mymap.removeLayer(route);
+    }
+    if (stopGroup) {
+      stopGroup.clearLayers();
+    }
+
+    route = new L.Polyline(pointList, {
+      color: 'red',
+      weight: 3,
+      opacity: 0.5,
+      smoothFactor: 1
+    });
+    route.addTo(mymap);
+
+    var stops = _.reject(data.line, {type: 'bus'});
+    var s = [];
+    _.each(stops, function(stop) {
+      var marker = L.marker(new L.LatLng(stop.latlng[0],stop.latlng[1]), {opacity: 0.2});
+      s.push(marker);
+    });
+    stopGroup = new L.featureGroup(s);
+    stopGroup.addTo(mymap);
+    mymap.fitBounds(stopGroup.getBounds());
+  }
+
+  function refreshData() {
+    $.getJSON('api/service/'+service, function(data) {
+      refresh = setTimeout(refreshData, 3500);
+      drawBuses(_.reject(data.line, {type: 'stop'}));
+    });
+  }
+
+  function serviceChange(sel){
+    service = sel.value;
+    $.getJSON('api/service/'+service, function(data) {
+      drawRoute(data);
+      drawBuses(_.reject(data.line, {type: 'stop'}));
+      if (refresh) {
+        clearTimeout(refresh);
+      }
+      refreshData();
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function(event) { 
+    // generateLine();
+    // initialize the map on the "map" div with a given center and zoom
+    mymap = L.map('map').setView([-33.4945356,-70.6514212], 10);
+    L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy;<a href="https://cartodb.com/attributions">CartoDB</a>'
+    }).addTo(mymap);
+
+  });
+</script>
+<script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.2/lodash.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<div class="default-page">
+  <select id="service" onchange="serviceChange(this)">
+    <option>Servicio</option>
+    <% _.each(services, function(s){ %>
+      <option value="<%= s %>"><%= s %></option>
+    <% }) %>
+  </select>
+  <div id="map" style="height: 700px; width: 1400px;"></div>
+  <div id="chart" style="height: 250px; width: 1400px;"></div>
+</div>

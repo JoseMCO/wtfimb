@@ -48,5 +48,6 @@ module.exports.routes = {
 
   'get /api/service/:service': 'ServiceController.getService',
   'get /service': 'ServiceController.index',
+  'get /map': 'ServiceController.map',
 
 };
